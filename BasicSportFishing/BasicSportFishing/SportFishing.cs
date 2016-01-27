@@ -10,6 +10,8 @@ namespace BasicSportFishing
 {
     public class BasicSportFishing : Core
     {
+        private PreviousCast prevCast = PreviousCast.INITIALIZED;
+
         public static string GetPluginAuthor()
         {
             return "tictoc & shigato";
@@ -60,36 +62,56 @@ namespace BasicSportFishing
                     Log(DateTime.Now.ToLongTimeString() + " Use Skill: Stand Firm Left");
                     TurnDirectly();
                     UseSkill(21194);
+                    prevCast = PreviousCast.STAND_FIRM_LEFT;
                 }
                 if (buffTime(me.target, 5264) > 0 && !me.isCasting)
                 {
                     Log(DateTime.Now.ToLongTimeString() + " Use Skill: Stand Firm Right");
                     TurnDirectly();
                     UseSkill(21135);
+                    prevCast = PreviousCast.STAND_FIRM_RIGHT;
                 }
                 if (buffTime(me.target, 5267) > 0 && !me.isCasting)
                 {
                     Log(DateTime.Now.ToLongTimeString() + " Use Skill: Give Slack");
                     TurnDirectly();
                     UseSkill(21195);
+                    prevCast = PreviousCast.GIVE_SLACK;
                 }
                 if (buffTime(me.target, 5266) > 0 && !me.isCasting)
                 {
                     Log(DateTime.Now.ToLongTimeString() + " Use Skill: Reel In");
                     TurnDirectly();
                     UseSkill(21196);
+                    prevCast = PreviousCast.REEL_IN;
                 }
                 if (buffTime(me.target, 5508) > 0 && !me.isCasting)
                 {
                     Log(DateTime.Now.ToLongTimeString() + " Use Skill: Big Reel In");
                     TurnDirectly();
                     UseSkill(21290);
+                    prevCast = PreviousCast.BIG_REEL_IN;
                 }
-                if (!hasBuff() && !me.isCasting)
+                // No buff, and not casting and my previous cast wasn't Big Reel In
+                if (!hasBuff() && !me.isCasting && prevCast != PreviousCast.BIG_REEL_IN)
                 {
                     Log(DateTime.Now.ToLongTimeString() + " Precasting: Big Reel In");
                     TurnDirectly();
                     UseSkill(21290);
+                    prevCast = PreviousCast.BIG_REEL_IN_PRECAST;
+
+                    // Target get's buff while casting Big Reel In
+                    if(buffTime(me.target, 5508) > 0)
+                    {
+                        prevCast = PreviousCast.BIG_REEL_IN;
+                    }
+                }
+                if (!hasBuff() && !me.isCasting && prevCast == PreviousCast.BIG_REEL_IN)
+                {
+                    Log(DateTime.Now.ToLongTimeString() + " Predicting cast: Reel In");
+                    TurnDirectly();
+                    UseSkill(21196);
+                    prevCast = PreviousCast.REEL_IN;
                 }
 
             }
@@ -171,8 +193,15 @@ namespace BasicSportFishing
                     if (buffTime(me.target, 5508) > 0 && myCastSkillId != 21290)
                         CancelWithDelay(delay);
 
-                    // Target has no valid buff, and i'm not casting Big Reel In
-                   if(!hasBuff() && me.isCasting && myCastSkillId != 21290)
+                    // Target has no valid buff, and i'm not casting Big Reel In and my previous cast wasn't big reel in
+                   if(!hasBuff() && me.isCasting && myCastSkillId != 21290 && prevCast != PreviousCast.BIG_REEL_IN)
+                    {
+                        CancelWithDelay(delay);
+                    }
+
+
+                   // Target has no valid buff, and i'm not casting Reel In while previous cast was Big Reel
+                   if(!hasBuff() && me.isCasting && myCastSkillId != 21196 && prevCast == PreviousCast.BIG_REEL_IN)
                     {
                         CancelWithDelay(delay);
                     }
