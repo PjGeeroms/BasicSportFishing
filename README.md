@@ -1,2 +1,2 @@
 # BasicSportFishing
-by tictoc & shigato
+automated fishing
